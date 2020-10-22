@@ -21,8 +21,9 @@ import (
 	"sync"
 )
 
+//nolint:gochecknoglobals
 var (
-	modules   = make(map[string]ModuleInfo)
+	modules   = make(map[string]Module)
 	modulesMu sync.RWMutex
 )
 
@@ -134,7 +135,8 @@ func RegisterModule(instance Module) {
 	if mod.New == nil {
 		panic("missing ModuleInfo.New")
 	}
-	if val := mod.New(); val == nil {
+	val := mod.New()
+	if val == nil {
 		panic("ModuleInfo.New must return a non-nil module instance")
 	}
 
@@ -144,16 +146,16 @@ func RegisterModule(instance Module) {
 	if _, ok := modules[string(mod.ID)]; ok {
 		panic(fmt.Sprintf("module already registered: %s", mod.ID))
 	}
-	modules[string(mod.ID)] = mod
+	modules[string(mod.ID)] = val
 }
 
-// GetModule returns module information from its ID (full name).
-func GetModule(name string) (ModuleInfo, error) {
+// GetModule returns the module given its ID (full name).
+func GetModule(name string) (Module, error) {
 	modulesMu.RLock()
 	defer modulesMu.RUnlock()
 	m, ok := modules[name]
 	if !ok {
-		return ModuleInfo{}, fmt.Errorf("module not registered: %s", name)
+		return nil, fmt.Errorf("module not registered: %s", name)
 	}
 	return m, nil
 }
@@ -188,7 +190,7 @@ func GetModuleID(instance interface{}) string {
 //
 // Because modules are registered to a map under the hood, the
 // returned slice will be sorted to keep it deterministic.
-func GetModules(scope string) []ModuleInfo {
+func GetModules(scope string) []Module {
 	modulesMu.RLock()
 	defer modulesMu.RUnlock()
 
@@ -200,7 +202,7 @@ func GetModules(scope string) []ModuleInfo {
 		scopeParts = []string{}
 	}
 
-	var mods []ModuleInfo
+	var mods []Module
 iterateModules:
 	for id, m := range modules {
 		modParts := strings.Split(id, ".")
@@ -222,7 +224,7 @@ iterateModules:
 
 	// make return value deterministic
 	sort.Slice(mods, func(i, j int) bool {
-		return mods[i].ID < mods[j].ID
+		return mods[i].K6Module().ID < mods[j].K6Module().ID
 	})
 
 	return mods
