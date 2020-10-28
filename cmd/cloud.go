@@ -363,10 +363,3 @@ func cloudCmdFlagSet() *pflag.FlagSet {
 
 	return flags
 }
-
-func init() {
-	cloudCmd := getCloudCmd()
-	RootCmd.AddCommand(cloudCmd)
-	cloudCmd.Flags().SortFlags = false
-	cloudCmd.Flags().AddFlagSet(cloudCmdFlagSet())
-}
