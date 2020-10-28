@@ -58,5 +58,4 @@ func getPauseCmd() *cobra.Command {
 }
 
 func init() {
-	RootCmd.AddCommand(getPauseCmd())
 }
