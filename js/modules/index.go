@@ -21,6 +21,10 @@
 package modules
 
 import (
+	"fmt"
+	"strings"
+	"sync"
+
 	"github.com/loadimpact/k6/js/modules/k6"
 	"github.com/loadimpact/k6/js/modules/k6/crypto"
 	"github.com/loadimpact/k6/js/modules/k6/crypto/x509"
@@ -32,15 +36,45 @@ import (
 	"github.com/loadimpact/k6/js/modules/k6/ws"
 )
 
-// Index of module implementations.
-var Index = map[string]interface{}{
-	"k6":                k6.New(),
-	"k6/crypto":         crypto.New(),
-	"k6/crypto/x509":    x509.New(),
-	"k6/encoding":       encoding.New(),
-	"k6/http":           http.New(),
-	"k6/metrics":        metrics.New(),
-	"k6/html":           html.New(),
-	"k6/ws":             ws.New(),
-	"k6/protocols/grpc": grpc.New(),
+//nolint:gochecknoglobals
+var (
+	// Index of module implementations.
+	index = map[string]interface{}{
+		"k6":                k6.New(),
+		"k6/crypto":         crypto.New(),
+		"k6/crypto/x509":    x509.New(),
+		"k6/encoding":       encoding.New(),
+		"k6/http":           http.New(),
+		"k6/metrics":        metrics.New(),
+		"k6/html":           html.New(),
+		"k6/ws":             ws.New(),
+		"k6/protocols/grpc": grpc.New(),
+	}
+	mx sync.RWMutex
+)
+
+const extPrefix string = "k6/x/"
+
+// GetModule returns the module registered with name.
+func GetModule(name string) interface{} {
+	mx.RLock()
+	defer mx.RUnlock()
+	return index[name]
+}
+
+// RegisterModule registers the given module as a JavaScript module, available
+// for import from JS scripts with the "k6/x/<name>" import path.
+// This function panics if a module with the same name is already registered.
+func RegisterModule(name string, mod interface{}) {
+	if !strings.HasPrefix(name, extPrefix) {
+		name = fmt.Sprintf("%s%s", extPrefix, name)
+	}
+
+	mx.Lock()
+	defer mx.Unlock()
+
+	if _, ok := index[name]; ok {
+		panic(fmt.Sprintf("module already registered: %s", name))
+	}
+	index[name] = mod
 }
