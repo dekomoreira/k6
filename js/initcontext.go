@@ -34,10 +34,9 @@ import (
 
 	"github.com/loadimpact/k6/js/common"
 	"github.com/loadimpact/k6/js/compiler"
-	"github.com/loadimpact/k6/js/modules"
+	"github.com/loadimpact/k6/js/internal/modules"
 	"github.com/loadimpact/k6/lib"
 	"github.com/loadimpact/k6/loader"
-	mod "github.com/loadimpact/k6/modules"
 )
 
 type programWithSource struct {
@@ -116,14 +115,10 @@ func newBoundInitContext(base *InitContext, ctxPtr *context.Context, rt *goja.Ru
 func (i *InitContext) Require(arg string) goja.Value {
 	switch {
 	case arg == "k6", strings.HasPrefix(arg, "k6/"):
-		// Builtin or plugin modules ("k6", "k6/*", or "k6/x/*") are handled
+		// Builtin or external modules ("k6", "k6/*", or "k6/x/*") are handled
 		// specially, as they don't exist on the filesystem. This intentionally
 		// shadows attempts to name your own modules this.
-		reqFn := i.requireModule
-		if strings.HasPrefix(arg, "k6/x/") {
-			reqFn = i.requireExtModule
-		}
-		v, err := reqFn(arg)
+		v, err := i.requireModule(arg)
 		if err != nil {
 			common.Throw(i.runtime, err)
 		}
@@ -139,15 +134,7 @@ func (i *InitContext) Require(arg string) goja.Value {
 }
 
 func (i *InitContext) requireModule(name string) (goja.Value, error) {
-	mod, ok := modules.Index[name]
-	if !ok {
-		return nil, errors.Errorf("unknown builtin module: %s", name)
-	}
-	return i.runtime.ToValue(common.Bind(i.runtime, mod, i.ctxPtr)), nil
-}
-
-func (i *InitContext) requireExtModule(name string) (goja.Value, error) {
-	mod := mod.GetModule(name)
+	mod := modules.GetModule(name)
 	if mod == nil {
 		return nil, errors.Errorf("unknown module: %s", name)
 	}

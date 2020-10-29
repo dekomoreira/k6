@@ -29,7 +29,7 @@ import (
 	"github.com/dop251/goja"
 
 	"github.com/loadimpact/k6/js/common"
-	"github.com/loadimpact/k6/js/modules/k6/html"
+	"github.com/loadimpact/k6/js/internal/modules/k6/html"
 	"github.com/loadimpact/k6/lib/netext/httpext"
 )
 

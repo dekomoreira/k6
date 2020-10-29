@@ -91,7 +91,7 @@ func (s *Stage) UnmarshalText(b []byte) error {
 
 // A Group is an organisational block, that samples and checks may be tagged with.
 //
-// For more information, refer to the js/modules/k6.K6.Group() function.
+// For more information, refer to the js/internal/modules/k6.K6.Group() function.
 type Group struct {
 	// Arbitrary name of the group.
 	Name string `json:"name"`
@@ -179,7 +179,7 @@ func (g *Group) Check(name string) (*Check, error) {
 
 // A Check stores a series of successful or failing tests against a value.
 //
-// For more information, refer to the js/modules/k6.K6.Check() function.
+// For more information, refer to the js/internal/modules/k6.K6.Check() function.
 type Check struct {
 	// Arbitrary name of the check.
 	Name string `json:"name"`
